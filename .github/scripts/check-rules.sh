@@ -1,5 +1,5 @@
 exempt_folders="documentation/DEVLOG"
-code_pattern='\.(sh|ya?ml)$'
+code_pattern='\.(sh|ya?ml|rs|toml)$'
 
 errors=0
 template="${TEMPLATE:-false}"
@@ -126,7 +126,6 @@ check_tests_doc() {
   if [ "$count" -gt 0 ]; then expected="$(seq 1 "$count")"; fi
   [ "$headings" = "$expected" ] || fail "$doc: its tests are not numbered 1 to $count, in order"
   [ "$listed" = "$expected" ] || fail "$doc: its table of contents does not list Tests 1 to $count, in order"
-  [ "$count" -le 100 ] || fail "$doc has $count tests, more than 100 (Rule 5)"
   long="$(printf '%s\n' "$text" | "$awk_bin" '
     /^## / { field = 0 } /^### / { field = 1; next }
     field && length($0) > 120 { print "line " NR ": " length($0) " characters" }
@@ -163,7 +162,7 @@ run "placeholders filled in" check_placeholders
 run "files per folder (Rule 14)" check_folders
 run "unique file names (Rule 15)" check_names
 run "development log (Rules 16 to 22)" check_devlog
-run "TESTS.md (Rules 5 and 6)" check_tests_doc
+run "TESTS.md (Rule 6)" check_tests_doc
 run "lengths of lines and files (Rules 12 and 13)" check_code
 if [ "$errors" -gt 0 ]; then
   printf '\n%s failed.\n' "$errors"

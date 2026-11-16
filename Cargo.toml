@@ -1,0 +1,31 @@
+[package]
+name = "speech-to-text"
+version = "0.1.0"
+edition = "2024"
+license = "MIT"
+description = "Transcribes audio files to text that can be copied or exported as .md or .txt."
+build = "prebuild/embed.rs"
+
+[dependencies]
+candle-core = "0.11.1"
+candle-nn = "0.11.1"
+candle-transformers = "0.11.1"
+eframe = "0.37.0"
+opus-decoder = "0.1.1"
+rfd = "0.18.0"
+rubato = "5.1.0"
+serde_json = "1"
+symphonia = { version = "0.6.1", default-features = false, features = [
+    "aac", "flac", "isomp4", "mp3", "ogg", "pcm", "vorbis", "wav",
+] }
+tokenizers = { version = "0.23.2", default-features = false, features = ["fancy-regex"] }
+
+[dev-dependencies]
+egui_kittest = "0.37.0"
+ra-ap-rustc_lexer = "0.185.0"
+
+[profile.dev.package."*"]
+opt-level = 3
+
+[profile.dev.package.opus-decoder]
+overflow-checks = false

@@ -1,11 +1,11 @@
 ---
 name: tests-doc
 description: >-
-  Keep documentation/TESTS.md in step with the tests: add, remove, merge, renumber and describe tests, keep each
-  test's file and lines right, and stay within 100 tests. Use this skill whenever a test is added, changed, moved,
-  merged or removed; whenever code in a test file moves so that the lines of its tests change; when deciding whether a
-  new test is worth one of the 100 places; and when a test fails and its entry is needed to judge whether the failure
-  is real or a false positive.
+  Keep documentation/TESTS.md in step with the tests: add, remove, merge, renumber and describe tests, and keep each
+  test's file and lines right. Use this skill whenever a test is added, changed, moved, merged or removed; whenever
+  code in a test file moves so that the lines of its tests change; when deciding whether a new test has a purpose that
+  Rule 5 allows; and when a test fails and its entry is needed to judge whether the failure is real or a false
+  positive.
 ---
 
 # TESTS.md
@@ -49,10 +49,10 @@ No file but `settings.py` writes `settings.json`; the failure names the file tha
   log alone; its sections describe the numbers as they were then.
 - After a test file changes, check the lines of every test in it, not only of the test that changed.
 
-## At most 100 tests
+## What a test is for
 
-- Count before adding (Rule 5). At 100, merge the new check into a related test, or replace the test that is worth
-  least, and say which and why in the log.
+- Each test tests one thing, for one of the purposes Rule 5 names: compliance with a requirement, compliance with a
+  rule, or catching again a bug found before (a regression test). Name the purpose before writing the test.
 - Tests should _sufficiently_ ensure that the project is complete, correct, maintainable and accessible; coverage is
   not a goal. Do not write a test that another test already makes.
 - A test that fails without a real fault, a false positive, is mended or removed, not left to be ignored.
@@ -66,5 +66,5 @@ No file but `settings.py` writes `settings.json`; the failure names the file tha
    what is wrong. Undo the breakage. The log's **Checked.** point says that this was done.
 3. Write or mend its entry, and renumber what follows.
 4. Run all the tests, then `bash .github/scripts/check-rules.sh`, which checks that the tests are numbered 1, 2, 3 in
-   order in both the headings and the table of contents, that there are at most 100, and the length of the fields.
+   order in both the headings and the table of contents, and the length of the fields.
 5. Record it in the log: the count in **Tests.**, and `TESTS.md` in **Documents.**

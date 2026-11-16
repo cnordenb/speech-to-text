@@ -17,10 +17,12 @@ jobs:
         env:
           TEMPLATE: ${{ github.event.repository.is_template }}
         run: bash .github/scripts/check-rules.sh
+      - name: Install the Rust toolchain
+        run: rustup toolchain install stable --profile minimal && rustup default stable
       - name: Run the tests
         if: always()
         env:
-          TEST_COMMAND: ''
+          TEST_COMMAND: 'cargo test'
         run: |
           if [ -z "$TEST_COMMAND" ]; then
             echo "::warning::No tests run yet: set TEST_COMMAND in .github/workflows/checks.yml."

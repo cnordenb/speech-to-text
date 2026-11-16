@@ -1,9 +1,9 @@
 # Instructions for AI agents
 
-{{PROJECT_NAME}}: {{PROJECT_DESCRIPTION}}
+speech-to-text: A Windows application that transcribes audio files, such as .ogg, to text that can be copied or exported as .md or .txt.
 
-- Stack: {{STACK}}
-- Run the tests: `{{TEST_COMMAND}}`
+- Stack: Rust 1.100, edition 2024; candle (the Whisper models), symphonia and opus-decoder (audio files), rubato (sample rate), eframe/egui (the window), rfd (file dialogs); tests with `cargo test` and egui_kittest
+- Run the tests: `cargo test`
 - Check the rules a script can check: `bash .github/scripts/check-rules.sh` (Git Bash on Windows)
 
 ## Read before changing anything
@@ -26,7 +26,7 @@
 
 ## A change is done when
 
-1. The tests pass, and what changed is tested, within the 100 tests Rule 5 allows.
+1. The tests pass, and what changed is tested.
 2. `TESTS.md` matches the tests: their numbers, files, lines and purposes (Rule 6).
 3. `MAINTAINER.md` still explains the code and how to maintain it, its first chapter still first (Rules 7 and 8).
 4. `TERMINOLOGY.md` defines every new term (Rule 9).
@@ -54,7 +54,6 @@ Each procedure is a file in `.claude/skills/`. Claude Code loads them by itself;
 | Keep `MAINTAINER.md` true after a change | `maintainer-guide` |
 | Add or change a term in `TERMINOLOGY.md` | `terminology` |
 | Check the project against `RULES.md` and `REQUIREMENTS.md` | `rules-check` |
-| Turn a fresh copy of the template into a project, and later fill in the placeholders it left | `project-setup` |
 | Write or change code in a language that ub-mode's tools support, see [ub-mode](#ub-mode) | `ub-mode` |
 
 ## ub-mode
@@ -63,7 +62,7 @@ Code is written and changed by `ub-mode` whenever its tools, crapper, dryer and 
 TypeScript, JavaScript, Go, C, Java, Rust or Clojure. In any other language, use it only when asked, as with
 `/ub-mode`. It is copied unchanged from github.com/cnordenb/ub-mode, under the MIT licence in `LICENSE-ub-mode.txt`
 beside it. Where it and `RULES.md` differ, the rules win: its log is the development log, its glossary
-`TERMINOLOGY.md`, and its tests stay within Rules 5 and 25, so no test is written only to please crapper or mutator.
+`TERMINOLOGY.md`, and its tests stay within Rule 5, so no test is written only to please crapper or mutator.
 
 The tools are not part of the project, and are never copied into it. Run them from clones next to the project's
 folder, from that folder, in Git Bash on Windows: `../crapper/crapper`, `../dryer/dryer`, `../mutator/mutator`. For C,
@@ -72,3 +71,4 @@ does not work for the language, skip it, say so, and name it under "Not done".
 
 All three tools were tried on small projects on 2026-11-10 under Windows 11, and worked for Python, TypeScript,
 JavaScript, Go and C. Java, Rust and Clojure were not tried: Maven, Cargo and the Clojure CLI were not installed.
+On 2026-11-16 they were tried on this project, in Rust, and work with the commands in `MAINTAINER.md`, under Tests.

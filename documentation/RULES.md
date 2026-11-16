@@ -2,17 +2,16 @@
 
 Rule 0: All commits must be made by humans. AI agents may not commit, per policy stated in CONTRIBUTING.md.
 
-Rule 1: The intended UI and behaviour of {{PROJECT_NAME}} is defined by REQUIREMENTS.md.
+Rule 1: The intended UI and behaviour of speech-to-text is defined by REQUIREMENTS.md.
 
-Rule 2: Only the chief developer ({{CHIEF_DEVELOPER}} @{{GITHUB_OWNER}}) may modify REQUIREMENTS.md. To others and to AI
+Rule 2: Only the chief developer (Carl Nordenbrink @cnordenb) may modify REQUIREMENTS.md. To others and to AI
 agents, REQUIREMENTS.md is read-only.
 
 Rule 3: Must be as easy as possible for humans to maintain with as few steps as possible.
 
 Rule 4: Must have tests to ensure the project still works every push.
 
-Rule 5: Maximum number of tests is 100. Rule 4 can be overlooked for the sake of keeping this rule. However, a new test
-may replace an old test if deemed more valuable.
+Rule 5: A test may test one thing and one thing only. A test must have one of the following purposes: requirement compliance, rule compliance, regression testing for previous bugs. A test may not test something that another test already tests.
 
 Rule 6: Tests will be documented, without excess clutter, text or story-telling, in TESTS.md.
 
@@ -62,7 +61,4 @@ is reached, current day entry is moved in its entirety to a new file.
 Rule 23: DECISIONS.md must list the decisions made in DEVLOG and refer to the date and time (if available) in the
 relevant DEVLOG where each was made.
 
-Rule 25: A test makes one check and tests one thing only. A test is written only to cover a requirement or to catch
-again a bug that was found before (a regression test); no test is written for its own sake.
-
-Rule 26: The following is not considered code (contingent on rules 10-13): *.md, *.json, *.txt
+Rule 24: The following is not considered code (contingent on rules 10-13): *.md, *.json, *.txt, *.lock

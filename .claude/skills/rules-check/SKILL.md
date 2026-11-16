@@ -16,9 +16,9 @@ bash .github/scripts/check-rules.sh
 ```
 
 It checks Rule 14 (files per folder), Rule 15 (unique names), Rules 12 and 13 (lengths of lines and files, in the
-files that `code_pattern` at its top matches), Rules 16 to 22 (the log's form) and Rules 5 and 6 (`TESTS.md`). Every
+files that `code_pattern` at its top matches), Rules 16 to 22 (the log's form) and Rule 6 (`TESTS.md`). Every
 `FAIL` line names the file and the rule. A `skip` line means it could not check, and says why. A `todo` line lists
-placeholders left from the template: not a breach; fill in those whose answers are known, as `project-setup` says.
+placeholders left from the template: not a breach; fill in those whose answers are known.
 
 ## 2. What the tests check
 
@@ -31,7 +31,7 @@ by the script, by a test, or by reading the code and the documents. Read what is
 Rule 11 (60 lines at most) or every file of code for Rule 10 (no comments). Record each as holding, broken (where,
 exactly), or not checkable, and why.
 
-A requirement with no test is not a breach, but list it: it may need a test, within Rule 5's 100.
+A requirement with no test is not a breach, but list it: it may need a test (Rule 5).
 
 ## 4. Mend, or ask
 
