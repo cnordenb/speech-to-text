@@ -6,6 +6,9 @@
 
 # speech-to-text
 
+## But why?
+Your client probably isn't paying you to spend time transcribing their voice messages.
+
 ## Description
 
 A Windows application that transcribes audio files, such as .ogg, to text that can be copied or exported as .md or .txt.
