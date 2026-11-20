@@ -1,5 +1,5 @@
 [![GitHub last commit](https://img.shields.io/github/last-commit/cnordenb/speech-to-text)](#)
-[![language](https://img.shields.io/badge/language-Rust-FFFF00)](#)
+[![language](https://img.shields.io/badge/language-Rust-DEA584)](#)
 [![license](https://img.shields.io/badge/license-MIT-007FFF)](LICENSE)
 [![testing](https://img.shields.io/badge/testing-yes-C3FF00)](documentation/TESTS.md)
 [![maintainable](https://img.shields.io/badge/maintainable-yes-00FF72)](documentation/MAINTAINER.md)
