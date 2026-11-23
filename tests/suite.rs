@@ -3,7 +3,7 @@ use egui_kittest::Harness;
 use egui_kittest::kittest::Queryable;
 use ra_ap_rustc_lexer::{FrontmatterAllowed, TokenKind, tokenize};
 use speech_to_text::{Failure, embedded};
-use speech_to_text::app::{App, Dialogs, Event, Job, Provider, serve};
+use speech_to_text::app::{App, Dialogs, Event, Job, Provider, cli, serve};
 use speech_to_text::catalog::Model;
 use speech_to_text::export::ExportFormat;
 use speech_to_text::whisper::ModelFiles;
@@ -45,6 +45,11 @@ fn outcomes(fixture: &str, models: &[Model], files: Provider) -> Vec<Result<Stri
 
 fn transcribed(fixture: &str) -> String {
     outcomes(fixture, &[Model::Tiny], embedded).remove(0).unwrap().to_lowercase()
+}
+
+fn command_line(arguments: &[&str]) -> std::process::Output {
+    let program = env!("CARGO_BIN_EXE_speech-to-text");
+    std::process::Command::new(program).args(arguments).current_dir(project("tests/fixtures")).output().unwrap()
 }
 
 struct Chosen {
@@ -260,7 +265,47 @@ fn test_15_a_file_dropped_during_a_transcription_starts_no_job() {
 }
 
 #[test]
-fn test_16_the_code_has_no_comments() {
+fn test_16_the_command_line_writes_the_transcript_to_standard_output() {
+    let run = command_line(&["transcribe", "fox.wav", "--model", "tiny"]);
+    assert!(String::from_utf8_lossy(&run.stdout).to_lowercase().contains("quick brown fox"));
+}
+
+#[test]
+fn test_17_the_model_named_on_the_command_line_goes_with_the_job() {
+    let arguments = ["transcribe", "voice note.ogg", "--model", "base"].map(std::ffi::OsString::from);
+    let model = match cli::parse(&arguments) {
+        Ok(cli::Command::Transcribe(request)) => Some(request.job.model),
+        _ => None,
+    };
+    assert_eq!(model, Some(Model::Base));
+}
+
+#[test]
+fn test_18_the_command_line_saves_the_transcript_to_the_file_named_by_output() {
+    let saved = std::env::temp_dir().join("speech-to-text-test-18.md");
+    let _ = fs::remove_file(&saved);
+    command_line(&["transcribe", "fox.wav", "--model", "tiny", "--format", "md", "--output", saved.to_str().unwrap()]);
+    assert!(fs::read_to_string(&saved).unwrap().to_lowercase().starts_with("# fox
+
+the quick brown fox"));
+}
+
+#[test]
+fn test_19_a_failure_ends_the_command_line_with_an_error_status() {
+    assert_eq!(command_line(&["transcribe", "silence.ogg", "--model", "tiny"]).status.code(), Some(1));
+}
+
+#[test]
+fn test_20_an_audio_file_named_as_the_only_argument_opens_the_window() {
+    let first = match cli::parse(&[std::ffi::OsString::from("voice note.ogg")]) {
+        Ok(cli::Command::Window(first)) => first,
+        _ => None,
+    };
+    assert_eq!(first, Some(PathBuf::from("voice note.ogg")));
+}
+
+#[test]
+fn test_21_the_code_has_no_comments() {
     let is_comment = |kind: TokenKind| matches!(kind, TokenKind::LineComment { .. } | TokenKind::BlockComment { .. });
     let commented: Vec<PathBuf> = sources()
         .into_iter()
@@ -271,7 +316,7 @@ fn test_16_the_code_has_no_comments() {
 }
 
 #[test]
-fn test_17_no_function_exceeds_60_lines() {
+fn test_22_no_function_exceeds_60_lines() {
     let longest = sources().iter().map(|(_, source)| longest_function(source)).max();
     assert!(longest <= Some(60), "the longest function has {longest:?} lines");
 }

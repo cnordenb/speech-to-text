@@ -4,8 +4,15 @@ permissions:
   contents: read
 jobs:
   checks:
-    runs-on: ubuntu-latest
-    timeout-minutes: 30
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-latest, windows-latest]
+    runs-on: ${{ matrix.os }}
+    timeout-minutes: 60
+    defaults:
+      run:
+        shell: bash
     steps:
       - name: Get the code
         run: |
@@ -14,6 +21,7 @@ jobs:
             "https://x-access-token:${{ github.token }}@github.com/${{ github.repository }}.git" "${{ github.sha }}"
           git checkout --quiet FETCH_HEAD
       - name: Check the rules that a script can check
+        if: matrix.os == 'ubuntu-latest'
         env:
           TEMPLATE: ${{ github.event.repository.is_template }}
         run: bash .github/scripts/check-rules.sh

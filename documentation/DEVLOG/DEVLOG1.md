@@ -3,6 +3,7 @@
 Part 1 of the development log. The decisions made in the log are listed in [DECISIONS.md](../DECISIONS.md).
 
 - [2026-11-16](#2026-11-16)
+- [2026-11-23](#2026-11-23)
 
 ## 2026-11-16
 
@@ -259,3 +260,262 @@ Part 1 of the development log. The decisions made in the log are listed in [DECI
    that every control has a name a screen reader can say, or that text keeps a contrast of 7:1. Should accessibility
    become a requirement? Proposal: a requirement such as "The window meets WCAG 2.2 at level AAA", and the two tests
    written again.
+
+## 2026-11-23
+
+### 19:00:09: a command line in the same executable, on Windows and Linux
+
+#### What changed
+
+- **Why.** The project is to be offered as an agent skill on Agensi, a marketplace whose listings hold text only:
+  an AI agent cannot use a window, so it must run the executable from a terminal, and agents also run on Linux. A
+  command line, a Linux build confirmed to work, and a draft of the skill were asked for. Three choices were made
+  before the work: the command line goes in the same executable; the draft of the skill stays outside Git; on Linux,
+  both the command line and the window are tried.
+- **The command line.** `src/app/cli.rs`, with `parse` and `start`. No arguments, or an audio file, opens the window
+  as before. `transcribe <audio file>` writes the transcript to standard output, or with `--output <file>` exports
+  it; `--model` takes tiny, base or small, small by default; `--format` takes txt or md, txt by default. `--help`
+  and `--version` print the usage and the version. The exit status is 0 when the transcript was written, 1 on a
+  failure, 2 on wrong usage. Progress is shown only in a terminal.
+- **One worker for both.** A transcription on the command line runs `serve`, the window's worker, on a thread of its
+  own. `serve` now takes any list of jobs, not only a channel. `Job::title` gives the name that both the window and
+  the command line put in a .md export. `ExportFormat` has `ALL` and a default, `Text`, which the usage text lists.
+- **A console program on Windows.** The executable was a window program at first, with the parent's console attached
+  for the command line. PowerShell then neither waited for it nor passed on its output or exit status, so the
+  executable is now a console program. `prebuild/embed.rs` writes a manifest into the Windows executable with
+  `consoleAllocationPolicy` set to `detached`, so that Windows 11 24H2 and later open no console window when it is
+  started from Explorer. On older Windows, `leave_own_console` lets go of a console that belongs to the window alone.
+- **Version.** 0.2.0, up from 0.1.0, in `Cargo.toml` and `Cargo.lock`.
+- **Checks on GitHub.** `checks.yml` runs the tests on Ubuntu and on Windows, and `check-rules.sh` on Ubuntu alone.
+  The time limit is 60 minutes, up from 30.
+- **The draft of the skill.** `temp/transcribe-audio/SKILL.md` and `LISTING.md`, outside Git, as Agensi lays a skill
+  out: the description says when to use it and when not, a "Requires" line names the executable, and the agent is told
+  never to download it, to write the transcript with `--output` and read that file, and what each exit status means.
+- **Tests.** 21, up from 17. New: Test 16, the transcript on standard output; Test 17, the model named on the command
+  line; Test 18, `--output` with `--format md`; Test 19, exit status 1 on a failure. Tests 16 and 17, for Rules 10 and
+  11, became Tests 20 and 21, with nothing changed but their numbers.
+- **Checked.**
+  - All 21 tests passed on Windows, and on Ubuntu 26.04 (glibc 2.43) in WSL 2. Each new test failed when the code it
+    guards was broken on purpose: no output, `--model` ignored, no export, exit status 0 on a failure. Each breakage
+    was undone.
+  - By hand on Windows: Git Bash, PowerShell and `cmd /c` wait for the command line, and get its output and exit
+    status. The window started from Explorer has no console; started with a new console of its own, it lets the
+    console go. Started with a fixture as its argument, it transcribes the fixture.
+  - By hand on Linux, with the test build: the command line without a display gave the right transcripts, exit
+    statuses 0, 1 and 2, and a .md export. The executable needs only glibc, libm and libgcc. Without a display, the
+    window ends with exit status 1 and says why; under WSLg it showed the transcript of `fox_vorbis.ogg`.
+  - The 34-second fixture took 5.2 seconds with tiny, 10.0 with base and 29.1 with small, with the release build on
+    an 8-core Ryzen 7 3700X.
+  - dryer: no duplicate. `bash .github/scripts/check-rules.sh` passed.
+- **Documents.** `TESTS.md`: Tests 16 to 21. `MAINTAINER.md`: chapter 1 for Linux and for the memory a release build
+  needs, the table of files, the diagram, "The command line", the dialogs on Linux, the build settings, the helper
+  `command_line`, and the full folders. `TERMINOLOGY.md`: command line, agent skill, exit status; audio file and
+  transcript widened. `README.md`: the description, "From the command line", the acknowledgements. `AGENTS.md`: the
+  description. `DECISIONS.md`.
+
+#### Obstacles met, and how they were solved
+
+- **PowerShell did not wait.** See "A console program on Windows" above. The attaching of the parent's console was
+  taken out with it.
+- **A release build needs about 14 GB of memory.** rustc peaked at 14.2 GB, and failed with "rustc-LLVM ERROR: out of
+  memory" when less was free; the small `src/main.rs` alone took 55 seconds and 14.2 GB. Putting the models' bytes in
+  `static` items, and `#[inline(never)]` on `embedded`, each needed more memory, not less, and both were undone. The
+  build is as it was before; `MAINTAINER.md` names the memory it needs.
+
+#### How the rules were read
+
+- **Requirement 6, "one Windows executable".** There is still one Windows executable; the Linux one is beside it, not
+  instead of it, and the command line is in the same executable. The command line and Linux go beyond the
+  requirements as they stand, so Tests 16 to 19 cite proposed requirements (Question 1).
+- **Requirement 5, Rust only.** On Linux no dependency compiles C code: `cargo tree` for Linux holds no `cc`, and
+  fontconfig and the window's libraries are loaded while the program runs. The Windows manifest is text that the Rust
+  build script writes, as it writes `embedded`, and `GetConsoleProcessList` and `FreeConsole` are called from Rust.
+- **Rule 14.** `src/` held its 7 files, so the command line is in a folder of its own, `src/app/`. `tests/fixtures/`
+  is full too.
+
+#### Not done
+
+- No release build was made on Linux: the machine lacked the free memory for it. The Linux command line and window
+  were tried with the test build, which reads the models from `models/` instead of holding them.
+- On Linux without xdg-desktop-portal, as in WSL, "Open audio file…" and the export buttons do nothing, and nothing
+  says why. Copy was not tried on Linux.
+- Windows 10 and Windows 11 before 24H2 were not tried: whether a console window flashes there is not known.
+- A person typing the command in cmd or PowerShell 5.1 sees letters outside ASCII printed in the console's code
+  page; `--output` writes UTF-8. Not tried, as every fixture is English.
+- crapper and mutator: see the next point of the log, if any; not run when this section was written.
+- .mp3, .flac and .m4a are still untried. No release binaries exist for download, and the checks on GitHub have not
+  run, since nothing was pushed.
+- A failure such as a missing file reads "The system cannot find the file specified. (os error 2)", without the
+  file's name, in the window as on the command line.
+
+#### Questions
+
+1. **Requirements 6 to 8.** Proposed: "6. It is one executable for Windows and one for Linux." "7. The model is
+   chosen in the app or on the command line, and the models are built in." "8. It can be run from the command line:
+   the transcript goes to standard output or is exported as .md or .txt, and a failure ends it with an error status."
+   `TESTS.md` cites them as "proposed Req." until they are written.
+2. **Memory for a release build.** About 14 GB, which GitHub's runners, with 16 GB, may not spare, and which many
+   computers lack. Proposal: have the linker put the models into the executable as data, so that rustc never reads
+   them.
+3. **The Linux executable's age.** Built on Ubuntu 26.04, it needs glibc 2.43 or newer, so it does not run on older
+   Linux. Proposal: build the released one on an older Ubuntu, or for musl.
+4. **The skill on Agensi.** Listed free first, or for a price? The code is MIT and public, so a buyer pays only for
+   `SKILL.md`. Proposal: free first, and four questions put to Agensi in writing before it is listed.
+
+### 19:58:51: the command line's arguments read by smaller functions, and "Open with" tested
+
+#### What changed
+
+- **Why.** crapper scored three functions of `src/app/cli.rs` over 10: `parse` 21.8, `transcription` 14.1 and
+  `start` 13.8. Before the command line, no function in the project scored over 8.05.
+- **`transcription`.** Split in three: `transcription` takes every argument that does not start with `-` as the audio
+  file; `set` reads one option and its value into the `Request`; `only` refuses none, or more than one, audio file.
+  `value` is gone. One answer changed: when two audio files are named and an unknown option follows them, the
+  option's error is now given instead of the files'. Both end with exit status 2.
+- **`start`.** `Command::Help` and `Command::Version` became one `Command::Say`, the text to print, as both did the
+  same. Each arm of `start` now calls one function: `window`, `transcribe`, `say`, or `wrong`, which prints the reason
+  and the usage.
+- **Tests.** 22, up from 21. New: Test 20, an audio file named as the only argument, as Explorer's "Open with" names
+  it, opens the window (Req. 1). It was the one way in with no test, and `parse` now stands between it and the window.
+  Tests 20 and 21, for Rules 10 and 11, became Tests 21 and 22, with nothing changed but their numbers.
+- **Checked.**
+  - Test 20 failed when `parse` was changed on purpose to drop the file, with `left: None`; the change was undone.
+  - The answers of the command line to 13 kinds of wrong usage were recorded before the split, and were the same
+    after it but for the one named above. `--help`, `--version` and an unknown argument were tried after the change
+    of `start`.
+  - All 22 tests passed with `cargo test`, and all 22 under `cargo llvm-cov`.
+  - crapper, after the split and Test 20 but before the change of `start`: `transcription` 6.0, `parse` 8.5, `set`
+    10.1, `start` 13.8, and no other function over 8.05. dryer: no duplicate. `bash .github/scripts/check-rules.sh`
+    passed.
+- **Documents.** `TESTS.md`: Test 20, and Tests 21 and 22. `MAINTAINER.md`: 22 tests in chapter 1, and how to add an
+  option, with `set` and `only`. `DECISIONS.md`: the numbers of the tests of Rules 10 and 11, and Test 20.
+
+#### Not done
+
+- The coverage measurement after the change of `start` was stopped while its report was written, because the computer
+  ran short of memory. So `start`'s new score is not known, and mutator was not run on `src/app/cli.rs`.
+- `set` scores 10.1: its complexity is 10, five of it from `?`. The lines of it that no test runs are wrong usage,
+  which no requirement names, so no test was written for them.
+- One earlier run under `cargo llvm-cov` failed Test 19 and two other tests while memory was short. They passed alone
+  under coverage, and all tests passed in the two full runs after it. The cause was not found.
+- The changes of this section were not tried on Linux; the tests ran there before them.
+
+### 20:04:06: the command line and the agent skill as they stand, and what is left
+
+#### What changed
+
+- **Why.** The work on the command line, on Linux and on the agent skill stops here for now. This section gathers in
+  one place what is done, what is not, where the requirements and rules are strained, the open questions and the
+  proposals, so that the work can go on from the log alone. The details are in the sections of
+  [19:00:09](#190009-a-command-line-in-the-same-executable-on-windows-and-linux) and
+  [19:58:51](#195851-the-command-lines-arguments-read-by-smaller-functions-and-open-with-tested).
+- **Documents.** This section only. No code changed.
+
+#### Where the work stands
+
+- **The command line.** `speech-to-text transcribe <audio file> [--model tiny|base|small] [--format txt|md] [--output
+  <file>]`, and `--help` and `--version`, in `src/app/cli.rs`. No arguments, or an audio file alone, opens the window.
+  The exit status is 0 when the transcript was written, 1 on a failure, 2 on wrong usage. Version 0.2.0.
+- **Windows.** The executable is a console program with a manifest asking for no console from Explorer, from Windows
+  11 24H2 on. Git Bash, PowerShell and `cmd` wait for it and get its output and exit status. The window started from
+  Explorer has no console, and started with a file it transcribes the file.
+- **Linux.** Tried in WSL 2 with Ubuntu 26.04: Rust 1.100 installed there with rustup, the project tested in place
+  from `/mnt/c/...` with `CARGO_TARGET_DIR=$HOME/stt-target`, so that the build stays out of the project's folder
+  and `models/` is shared. The 21 tests of then passed. Without a display the command line gave the right
+  transcripts and exit statuses; under WSLg the window showed the transcript. The executable needs glibc 2.43, for
+  `atan2f` and other functions of the C library's maths, and otherwise only libm and libgcc.
+- **Tests.** 22. All passed with `cargo test` on Windows, and under `cargo llvm-cov`.
+- **Tools.** `bash .github/scripts/check-rules.sh` passed. dryer: no duplicate. crapper, last measured before the
+  change of `start`: `set` 10.1, `start` 13.8, `parse` 8.5, `transcription` 6.0, every other function at most 8.05.
+- **Speed.** For the 34-second fixture, with the release build on an 8-core Ryzen 7 3700X: tiny 5.2 seconds, base
+  10.0, small 29.1.
+- **The draft of the agent skill.** `temp/transcribe-audio/SKILL.md`, the skill, and `LISTING.md`, the text for the
+  marketplace's form. `temp/skillisation.md` holds the marketplace's message. `temp/` is not in Git, so these exist
+  only on the computer they were written on. The skill tells the agent to check `speech-to-text --version`, never to
+  download the tool itself, to transcribe with `--output` to a file and read it, and what each exit status means.
+- **Agensi, as found on its site.** A listing is a ZIP of `SKILL.md` and small text files; executables fail its
+  security scan, and buyers get no download, so the skill can only name the tool under "Requires". The scan also fails
+  a download piped into a shell, and network calls joined with reading local files. `name`, in lower case with
+  hyphens and matching the folder, and `description` are required. Creators get 70 %; prices start at $1, card
+  payment at $5; a refund within 30 days takes back the creator's share; listing is not exclusive. Its message gives
+  150 000 visits and 20 000 users a month; its press release of July gave 50 000 and 3 000.
+  Sources: https://www.agensi.io/docs/packaging, https://www.agensi.io/security, https://www.agensi.io/terms,
+  https://www.agensi.io/docs/what-you-can-sell.
+
+#### Not done
+
+- **mutator** was not run on `src/app/cli.rs`, and `start`'s score after its change is not known: the coverage run
+  was stopped for lack of memory, with other builds running on the same computer.
+- **`set`** scores 10.1. Its untested lines are wrong usage, which no requirement names, so no test was written.
+- **One coverage run** failed three tests while memory was short; the cause was not found.
+- **Linux:** no release build, as it needs about 14 GB of free memory; Copy not tried; the dialogs need
+  xdg-desktop-portal, which WSL lacks; the changes of 19:58:51 not tested there.
+- **Windows 10, and Windows 11 before 24H2:** not tried; whether a console window flashes there is not known.
+- **.mp3, .flac and .m4a:** not tried. `tests/fixtures/` is full (Rule 14), so new fixtures need a folder of their own.
+- **GitHub:** the checks on Ubuntu and Windows have never run, as nothing has been pushed; no release binaries exist,
+  so the address under "Requires" in the skill leads nowhere yet.
+- **Messages:** a missing file reads "The system cannot find the file specified. (os error 2)", without the file's
+  name. In `cmd` and PowerShell 5.1, printed letters outside ASCII follow the console's code page; `--output` writes
+  UTF-8. Not tried.
+
+#### How the rules were read
+
+- **Requirement 6, "one Windows executable".** Read as still holding: there is one Windows executable, and the Linux
+  one is beside it. Question 1 of 19:00:09 proposes wording that names both.
+- **Requirement 7, "chosen in the app".** Holds; the command line chooses the model as well, beyond it.
+- **Rule 5.** Tests 16 to 19 cite proposed Requirements 7 and 8, which are not yet written.
+- **Rule 3.** A release build needs about 14 GB of free memory, which makes the most common maintenance task harder.
+- **Rule 4.** The tests run on every push only once the checks on GitHub have run on both systems.
+
+#### Next steps, in order
+
+1. Answer the open questions below, and write Requirements 6 to 8; then "proposed" comes out of `TESTS.md`.
+2. With about 15 GB of free memory and no other build running: coverage, crapper, and mutator on `src/app/cli.rs`,
+   with the commands in `MAINTAINER.md`, under Tests.
+3. In WSL: `cargo test` after the changes of 19:58:51, a release build, Copy, and the dialogs on a desktop that has
+   xdg-desktop-portal.
+4. Push a branch, so that the checks run on Ubuntu and Windows.
+5. Try the window on Windows 10, or on Windows 11 before 24H2.
+6. Release binaries, then the questions to Agensi, then the listing.
+
+#### A stronger agent skill: proposals
+
+1. **Binaries to download.** A workflow, started by a tag pushed by hand, that builds the Windows and Linux
+   executables and attaches them to a GitHub release with their SHA-256 sums. GitHub takes files up to 2 GiB. The
+   Linux one built on an older Ubuntu, or for musl, and the Windows one signed, as SmartScreen warns of an unsigned
+   download of 1.4 GB.
+2. **A smaller download.** 1.4 GB is the largest hurdle. Models stored at half precision take about half; a build
+   with tiny and base alone is about 220 MB; models fetched when first chosen would need Requirement 7 changed.
+3. **Offline and private first.** The marketplace mostly offers cloud services paid per call; "the audio never leaves
+   the computer, and nothing is paid per minute" is the difference to lead with.
+4. **Output for agents.** `--json` with text, language, model and duration; `--timestamps`; `--language` to set the
+   language; `--translate` to English, which Whisper can do and `Tokens` already knows; several files in one call,
+   with the model loaded once.
+5. **Speed.** Agents' shells stop commands after 2 to 10 minutes, and small takes about 0.85 seconds a second of audio
+   on a desktop processor. The graphics card, through candle's CUDA and Metal, would help.
+6. **macOS on Apple Silicon,** where many agents run. It would need Requirement 6 widened again.
+7. **Evidence of quality.** Only English in a computer voice is tested. Before a price: human voices, accents, a few
+   languages, and .mp3, .flac and .m4a; and Whisper's retry at a higher temperature against text repeated on noise.
+8. **A changelog** in `documentation/`, as the main folder is full, with the versions that the skill's "Requires"
+   names.
+9. **Four questions for Agensi, in writing, before the listing:** is a skill whose tool is downloaded apart from it
+   accepted; is a free `SKILL.md` that is also on GitHub counted as repackaged; how does the scan treat instructions
+   to run a local tool on the user's file; and does any of its 4 500 tools already transcribe speech.
+
+#### Open questions from earlier sections
+
+- [19:00:09](#190009-a-command-line-in-the-same-executable-on-windows-and-linux): the wording of Requirements 6 to 8
+  (1), the memory for a release build (2), the Linux executable's glibc (3), and free or paid on Agensi (4).
+- [2026-11-16 20:16:17](#201617-tests-only-for-rule-5s-purposes-and-no-placeholder-left): accessibility as a
+  requirement (1).
+
+#### Questions
+
+1. **Where the skill's draft is kept.** `temp/` is not in Git, and the project is public under MIT. Proposal: a
+   private repository for the skill, apart from the project, so that it is kept, and is not published before it is
+   decided whether it is sold.
+2. **The size of the models, again.** On 2026-11-16 the 1.43 GB of three models was kept. There is a new reason to
+   look again: every user of the skill must download it. Proposal: store the models at half precision, if the
+   transcripts of the fixtures stay the same.
+3. **Signing the Windows executable.** A certificate costs money each year; without one, Windows warns before the
+   download runs. Proposal: release unsigned first, and sign once the skill has users.

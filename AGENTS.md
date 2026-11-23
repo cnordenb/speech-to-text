@@ -1,6 +1,6 @@
 # Instructions for AI agents
 
-speech-to-text: A Windows application that transcribes audio files, such as .ogg, to text that can be copied or exported as .md or .txt.
+speech-to-text: An application for Windows and Linux that transcribes audio files, such as .ogg, to text that can be copied or exported as .md or .txt, in a window or from the command line.
 
 - Stack: Rust 1.100, edition 2024; candle (the Whisper models), symphonia and opus-decoder (audio files), rubato (sample rate), eframe/egui (the window), rfd (file dialogs); tests with `cargo test` and egui_kittest
 - Run the tests: `cargo test`

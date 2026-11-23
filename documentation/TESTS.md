@@ -45,6 +45,11 @@ Functional completeness & correctness tests:
 - [Test 13](#test-13): each job is transcribed by its own model
 - [Test 14](#test-14): a file dropped on the window is transcribed
 - [Test 15](#test-15): a file dropped during a transcription starts no job
+- [Test 16](#test-16): the command line writes the transcript to standard output
+- [Test 17](#test-17): the model named on the command line goes with the job
+- [Test 18](#test-18): the command line saves the transcript to the file named by --output
+- [Test 19](#test-19): a failure ends the command line with an error status
+- [Test 20](#test-20): an audio file named as the only argument opens the window
 
 Accessibility tests:
 
@@ -52,13 +57,13 @@ None.
 
 Maintainability tests:
 
-- [Test 16](#test-16): no comments in the code
-- [Test 17](#test-17): no function over 60 lines
+- [Test 21](#test-21): no comments in the code
+- [Test 22](#test-22): no function over 60 lines
 
 ## Test 1
 
 ### File residence:
-`tests/suite.rs`, lines 167-170
+`tests/suite.rs`, lines 172-175
 
 ### Purpose:
 Verify that an .ogg file holding Vorbis sound, at 44 100 Hz, is transcribed to text (Req. 1, 2).
@@ -69,7 +74,7 @@ The transcript of `fox_vorbis.ogg` by the tiny model, in lower case, contains "q
 ## Test 2
 
 ### File residence:
-`tests/suite.rs`, lines 172-175
+`tests/suite.rs`, lines 177-180
 
 ### Purpose:
 Verify that an .ogg voice note, Opus sound in SILK mode, is transcribed to text (Req. 1, 2).
@@ -80,7 +85,7 @@ The transcript of `fox_opus_silk.ogg` by the tiny model, in lower case, contains
 ## Test 3
 
 ### File residence:
-`tests/suite.rs`, lines 177-180
+`tests/suite.rs`, lines 182-185
 
 ### Purpose:
 Prevent the Opus decoder's shift overflow from stopping .ogg files in CELT mode again (regression).
@@ -91,7 +96,7 @@ Prevent the Opus decoder's shift overflow from stopping .ogg files in CELT mode 
 ## Test 4
 
 ### File residence:
-`tests/suite.rs`, lines 182-185
+`tests/suite.rs`, lines 187-190
 
 ### Purpose:
 Verify that an audio file that is not .ogg, a .wav, is transcribed to text (Req. 1, 2).
@@ -102,7 +107,7 @@ The transcript of `fox.wav` by the tiny model, in lower case, contains "quick br
 ## Test 5
 
 ### File residence:
-`tests/suite.rs`, lines 187-190
+`tests/suite.rs`, lines 192-195
 
 ### Purpose:
 Verify that a recording with two channels, here Opus sound, is transcribed to text (Req. 1, 2).
@@ -113,7 +118,7 @@ The transcript of `fox_opus_stereo.ogg` by the tiny model, in lower case, contai
 ## Test 6
 
 ### File residence:
-`tests/suite.rs`, lines 192-195
+`tests/suite.rs`, lines 197-200
 
 ### Purpose:
 Verify that a recording longer than one 30-second chunk is transcribed whole (Req. 2).
@@ -124,7 +129,7 @@ The transcript of the 34-second `long_vorbis.ogg`, in lower case, equals `LONG`,
 ## Test 7
 
 ### File residence:
-`tests/suite.rs`, lines 197-201
+`tests/suite.rs`, lines 202-206
 
 ### Purpose:
 Prevent text from being made up for a recording without speech, as "you" was for silence (regression).
@@ -135,7 +140,7 @@ The only outcome for `silence.ogg` is the failure "No speech was found in the au
 ## Test 8
 
 ### File residence:
-`tests/suite.rs`, lines 203-209
+`tests/suite.rs`, lines 208-214
 
 ### Purpose:
 Verify that the transcript is shown in a text field (Req. 3).
@@ -146,7 +151,7 @@ After the event that ends a job, the value of the window's multiline text input 
 ## Test 9
 
 ### File residence:
-`tests/suite.rs`, lines 211-219
+`tests/suite.rs`, lines 216-224
 
 ### Purpose:
 Verify that the user can copy the transcript from the window (Req. 3).
@@ -157,7 +162,7 @@ Pressing "Copy" makes the window ask for the whole transcript to be put on the c
 ## Test 10
 
 ### File residence:
-`tests/suite.rs`, lines 221-225
+`tests/suite.rs`, lines 226-230
 
 ### Purpose:
 Verify that the transcript is exported as .txt (Req. 4).
@@ -168,7 +173,7 @@ After "Export as .txt", the chosen file holds the transcript followed by one lin
 ## Test 11
 
 ### File residence:
-`tests/suite.rs`, lines 227-231
+`tests/suite.rs`, lines 232-236
 
 ### Purpose:
 Verify that the transcript is exported as .md (Req. 4).
@@ -179,7 +184,7 @@ After "Export as .md", the file holds "# voice note", an empty line, the transcr
 ## Test 12
 
 ### File residence:
-`tests/suite.rs`, lines 233-239
+`tests/suite.rs`, lines 238-244
 
 ### Purpose:
 Verify that the model chosen in the window is the one a job is given (Req. 7).
@@ -190,7 +195,7 @@ After "base" is chosen from Model, the job sent when a file is opened has `Model
 ## Test 13
 
 ### File residence:
-`tests/suite.rs`, lines 241-245
+`tests/suite.rs`, lines 246-250
 
 ### Purpose:
 Verify that the worker transcribes each job with the model the job names (Req. 7).
@@ -201,7 +206,7 @@ For two jobs, tiny then base, the worker asks for the files of exactly `[Tiny, B
 ## Test 14
 
 ### File residence:
-`tests/suite.rs`, lines 247-252
+`tests/suite.rs`, lines 252-257
 
 ### Purpose:
 Verify that an audio file dropped on the window is taken as input (Req. 1).
@@ -212,7 +217,7 @@ After `dropped.ogg` is dropped on the window, the job sent names that file.
 ## Test 15
 
 ### File residence:
-`tests/suite.rs`, lines 254-260
+`tests/suite.rs`, lines 259-265
 
 ### Purpose:
 Prevent a file dropped during a transcription from starting a second job again (regression).
@@ -223,7 +228,62 @@ After two files are dropped one after the other, with no job ended between them,
 ## Test 16
 
 ### File residence:
-`tests/suite.rs`, lines 262-271
+`tests/suite.rs`, lines 267-271
+
+### Purpose:
+Verify that the command line writes the transcript of an audio file to standard output (proposed Req. 8).
+
+### Assertion expectation:
+`transcribe fox.wav --model tiny` run by the executable prints, in lower case, text containing "quick brown fox".
+
+## Test 17
+
+### File residence:
+`tests/suite.rs`, lines 273-281
+
+### Purpose:
+Verify that the model named on the command line is the one the job is given (proposed Req. 7).
+
+### Assertion expectation:
+`transcribe "voice note.ogg" --model base` is read as a transcription whose job has `Model::Base`.
+
+## Test 18
+
+### File residence:
+`tests/suite.rs`, lines 283-291
+
+### Purpose:
+Verify that the command line exports the transcript as .md to the file named by --output (Req. 4, proposed Req. 8).
+
+### Assertion expectation:
+After `transcribe fox.wav --format md --output <file>`, the file starts "# fox", an empty line, "The quick brown fox".
+
+## Test 19
+
+### File residence:
+`tests/suite.rs`, lines 293-296
+
+### Purpose:
+Verify that a failure ends the command line with an error status (proposed Req. 8).
+
+### Assertion expectation:
+`transcribe silence.ogg --model tiny` run by the executable ends with exit status 1.
+
+## Test 20
+
+### File residence:
+`tests/suite.rs`, lines 298-305
+
+### Purpose:
+Verify that an audio file named as the only argument, as "Open with" names it, is taken as input (Req. 1).
+
+### Assertion expectation:
+`cli::parse` of the one argument `voice note.ogg` gives a window that starts with `voice note.ogg`.
+
+## Test 21
+
+### File residence:
+`tests/suite.rs`, lines 307-316
 
 ### Purpose:
 Enforce that the code has no comments (Rule 10).
@@ -231,10 +291,10 @@ Enforce that the code has no comments (Rule 10).
 ### Assertion expectation:
 No `.rs` file in `src/`, `prebuild/` or `tests/` holds a line or block comment; the failure lists the files.
 
-## Test 17
+## Test 22
 
 ### File residence:
-`tests/suite.rs`, lines 273-277
+`tests/suite.rs`, lines 318-322
 
 ### Purpose:
 Enforce that no function exceeds 60 lines of code (Rule 11).

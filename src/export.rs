@@ -2,13 +2,16 @@ use crate::Failure;
 use std::fs;
 use std::path::Path;
 
-#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+#[derive(Clone, Copy, Debug, Default, PartialEq, Eq)]
 pub enum ExportFormat {
+    #[default]
     Text,
     Markdown,
 }
 
 impl ExportFormat {
+    pub const ALL: [ExportFormat; 2] = [ExportFormat::Text, ExportFormat::Markdown];
+
     pub fn extension(self) -> &'static str {
         match self {
             ExportFormat::Text => "txt",

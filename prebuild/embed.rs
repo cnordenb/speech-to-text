@@ -11,6 +11,7 @@ const MODEL_FILES: [&str; 3] = ["config.json", "tokenizer.json", "model.safetens
 const MEL_FILTERS: &str = "melfilters.bytes";
 const MEL_FILTERS_URL: &str =
     "https://raw.githubusercontent.com/huggingface/candle/0.11.0/candle-examples/examples/whisper/melfilters.bytes";
+const POLICY: &str = "http://schemas.microsoft.com/SMI/2024/WindowsSettings";
 
 fn main() {
     println!("cargo::rerun-if-changed=prebuild/embed.rs");
@@ -24,9 +25,27 @@ fn main() {
             fetch(&url, &models.join(model.name()).join(file));
         }
     }
-    let generated = PathBuf::from(env::var("OUT_DIR").unwrap()).join("embedded.rs");
+    let out = PathBuf::from(env::var("OUT_DIR").unwrap());
     let release = env::var("PROFILE").unwrap() == "release";
-    fs::write(generated, embedded(&models, release)).unwrap();
+    fs::write(out.join("embedded.rs"), embedded(&models, release)).unwrap();
+    if env::var("CARGO_CFG_TARGET_ENV").unwrap() == "msvc" {
+        manifest(&out);
+    }
+}
+
+fn manifest(out: &Path) {
+    let path = out.join("speech-to-text.manifest");
+    let text = format!(
+        "<?xml version=\"1.0\" encoding=\"UTF-8\" standalone=\"yes\"?>\n\
+         <assembly xmlns=\"urn:schemas-microsoft-com:asm.v1\" manifestVersion=\"1.0\">\n\
+         <application><windowsSettings>\n\
+         <consoleAllocationPolicy xmlns=\"{POLICY}\">detached</consoleAllocationPolicy>\n\
+         </windowsSettings></application>\n\
+         </assembly>\n"
+    );
+    fs::write(&path, text).unwrap();
+    println!("cargo::rustc-link-arg-bins=/MANIFEST:EMBED");
+    println!("cargo::rustc-link-arg-bins=/MANIFESTINPUT:{}", path.display());
 }
 
 fn fetch(url: &str, target: &Path) {

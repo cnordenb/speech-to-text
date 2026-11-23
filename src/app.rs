@@ -7,6 +7,8 @@ use std::panic::{AssertUnwindSafe, catch_unwind};
 use std::path::PathBuf;
 use std::sync::mpsc::{Receiver, Sender, channel};
 
+pub mod cli;
+
 const AUDIO: [&str; 9] = ["ogg", "oga", "opus", "wav", "mp3", "flac", "m4a", "aac", "mp4"];
 
 pub struct Job {
@@ -46,7 +48,13 @@ pub struct App {
     status: Status,
 }
 
-pub fn serve(jobs: Receiver<Job>, events: Sender<Event>, files: Provider, wake: impl Fn()) {
+impl Job {
+    pub fn title(&self) -> String {
+        self.audio.file_stem().unwrap_or_default().to_string_lossy().into_owned()
+    }
+}
+
+pub fn serve(jobs: impl IntoIterator<Item = Job>, events: Sender<Event>, files: Provider, wake: impl Fn()) {
     let mut loaded = None;
     let report = |event: Event| {
         if events.send(event).is_ok() {
@@ -178,9 +186,10 @@ impl App {
     }
 
     fn start(&mut self, audio: PathBuf) {
-        self.title = audio.file_stem().unwrap_or_default().to_string_lossy().into_owned();
+        let job = Job { audio, model: self.model };
+        self.title = job.title();
         self.transcript.clear();
-        self.status = match self.jobs.send(Job { audio, model: self.model }) {
+        self.status = match self.jobs.send(job) {
             Ok(()) => Status::Working(0.0),
             Err(error) => Status::Failed(error.to_string()),
         };
